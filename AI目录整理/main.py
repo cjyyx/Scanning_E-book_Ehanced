@@ -1,47 +1,82 @@
 # %%
-from tqdm import tqdm
-
 from LLM import chatLLM
 
 # %%
+prompt = """
+您是一名经验丰富的图书管理员，正在参与一个将纸质书籍转化为电子书的项目。您的具体任务是利用OCR技术扫描书籍目录，并对扫描结果进行格式化处理，以制作电子目录。我将向您提供一份目录的OCR扫描结果，您需要根据这些信息输出一个结构化的电子目录。格式化的目录应该包括章节编号、标题和页码。
 
-with open("prompt.txt", "r", encoding="utf-8") as f:
-    prompt = f.read()
+一个您预期的格式化目录的示例如下：
+
+第3章 应力和应变分析	54
+	3.1 应力分析	54
+		3.1.1 应力张量及其分解	54
+		3.1.2 主应力和应力不变量	56
+		3.1.3 等斜面上的应力	57
+		3.1.4 等效应力	58
+		3.1.5 三向Mohr圆和Lode应力参数	59
+		3.1.6 应力空间和主应力空间	61
+	3.2 应变分析	62
+		3.2.1 位移与应变的关系	62
+		3.2.2 应变张量的分解和应变张量的不变量	63
+		3.2.3 等效应变和Lode应变参数	64
+		3.2.4 应变率张量和应变增量张量	65
+	参考文献	66
+	习题	66
+第4章 屈服条件	68
+	4.1 初始屈服条件	68
+	4.2 两种常用的屈服条件	71
+		4.2.1 Tresca屈服条件	71
+		4.2.2 Mises屈服条件	74
+		4.2.3 两种屈服条件的比较	74
+		4.2.4 Mises屈服条件的物理解释	76
+	4.3 屈服条件的实验验证	77
+	4.4 后继屈服条件	80
+	参考文献	83
+	习题	83
+第5章 塑性本构关系	85
+	5.1 弹性本构关系	85
+	5.2 Drucker公设	87
+	5.3 加载、卸载准则	92
+		5.3.1 理想塑性材料的加载、卸载准则	92
+		5.3.2 强化材料的加载、卸载准则	93
+	5.4 增量理论（流动理论）	93
+		5.4.1 概述	93
+		5.4.2 理想塑性材料与Mises条件相关联的流动法则	94
+		5.4.3 理想塑性材料与Tresca条件相关联的流动法则	97
+		5.4.4 强化材料的增量本构关系	99
+	5.5 全量理论（形变理论）	101
+		5.5.1 Илъюшин理论	101
+		5.5.2 简单加载和单一曲线假定	102
+		5.5.3 简单加载定理	104
+		5.5.4 塑性本构关系的总结与比较	105
+	5.6 岩土力学中的Coulomb屈服条件和流动法则	107
+	参考文献	109
+	习题	109
+
+请确认您理解任务要求，并准备好接收OCR结果后，回复我“明白了”。然后我将发送OCR扫描的内容给您。
+"""
+
+# %%
 
 with open("ocr_result.txt", "r", encoding="utf-8") as f:
     ocr_result = f.read()
 
-# 分割字符串
+# %%
 
-n = 1800
-ocr_result_list = [ocr_result[i : i + n] for i in range(0, len(ocr_result), n)]
+
+messages = [
+    {"role": "user", "content": prompt},
+    {"role": "assistant", "content": "明白了"},
+    {"role": "user", "content": ocr_result},
+]
+
+content = ""
+for resp in chatLLM(messages, temperature=0.85, top_p=0.8, stream=True):
+    print(resp["content"][len(content):], end="")
+    content = resp["content"]
+    
 
 # %%
 
-format_result = []
-
-with open("format_result.txt", "w", encoding="utf-8") as f:
-    for ocr in tqdm(ocr_result_list):
-        messages = [
-            {"role": "user", "content": prompt},
-            {"role": "assistant", "content": "明白了。等待你提供OCR结果。"},
-            {"role": "user", "content": ocr},
-        ]
-
-        response = chatLLM(
-            messages=messages,
-            temperature=0.7,
-            max_tokens=4096,
-        )
-
-        start_keyword = "[格式化后的目录]"
-        end_keyword = "[存在的问题]"
-
-        start_index = response.find(start_keyword) + len(start_keyword)
-        end_index = response.find(end_keyword)
-
-        f.write(response[start_index:end_index].strip() + "\n")
-        format_result.append(response)
-
-
-# %%
+with open("formatted_catalog.txt", "w", encoding="utf-8") as f:
+    f.write(content)
