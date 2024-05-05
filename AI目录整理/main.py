@@ -1,5 +1,7 @@
 # %%
-from LLM import chatLLM
+from uniai import aliChatLLM, zhipuChatLLM
+
+chatLLM = zhipuChatLLM("glm-4")
 
 # %%
 prompt = """
@@ -63,18 +65,17 @@ with open("ocr_result.txt", "r", encoding="utf-8") as f:
 
 # %%
 
-
 messages = [
     {"role": "user", "content": prompt},
-    {"role": "assistant", "content": "明白了"},
+    {"role": "assistant", "content": "明白了。请发送OCR扫描的内容，我将帮助您进行格式化处理。"},
     {"role": "user", "content": ocr_result},
 ]
 
 content = ""
-for resp in chatLLM(messages, temperature=0.85, top_p=0.8, stream=True):
-    print(resp["content"][len(content):], end="")
+for resp in chatLLM(messages, max_tokens=8192, stream=True):
+    print(resp["content"][len(content) :], end="")
     content = resp["content"]
-    
+
 
 # %%
 
